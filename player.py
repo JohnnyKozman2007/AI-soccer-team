@@ -4,16 +4,19 @@ import field
 from settings import *
 import random
 import math 
+from enemy import Enemy
 
 class Player(pygame.sprite.Sprite):
     iq = 0
     i = 0
+    friendly_start = True
     def __init__(self,x,y,groups,opening = False,id = 0):
         super().__init__(groups)
         self.id = id
         self.x = x
         self.y = y
         self.body = {}
+        self.speed = 1.8
         self.window = pygame.display.get_surface()
         self.decision = None
         self.strike = False
@@ -55,7 +58,7 @@ class Player(pygame.sprite.Sprite):
         self.teamates = [p2,p3]
     def shooting(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE] and self.shoot_allow:
+        if keys[pygame.K_SPACE] and self.shoot_allow or self.friendly_start:
             if self.have_ball :
                 self.shoot_player = pygame.time.get_ticks()
                 self.have_ball = False
@@ -64,10 +67,13 @@ class Player(pygame.sprite.Sprite):
                 
                 #self.ball.shot(shoot_x,shoot_y)
                 
-                      
+        
     def passing(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_p] and self.have_ball:
+        if keys[pygame.K_p] or self.friendly_start:
+            #print(self.id,self.have_ball)
+            if not self.have_ball:
+                return
             self.change_pass = pygame.time.get_ticks()
             self.pass_allow = False
 
@@ -120,7 +126,8 @@ class Player(pygame.sprite.Sprite):
             self.done = False
             self.rect.x = self.x
             self.rect.y = self.y
-
+            Enemy.game_started = True
+        
             
 
 
@@ -138,10 +145,23 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         if self.done:
             self.opening()
+            
         else:
             if field.Field.FOCUS == self.id:
                 self.input()
-            
+            if Player.friendly_start and self.have_ball:
+                # for i in self.teamates:
+                self.direction.y = -1
+                self.move()
+                self.passing()
+                self.direction.x = 1
+                self.move()
+                self.direction.x = 1
+                self.move()
+                # self.passing_to.have_ball = True
+                # self.passing_to.passing()
+
+                Player.friendly_start = False
             self.move()
             self.border()
             self.passing()
